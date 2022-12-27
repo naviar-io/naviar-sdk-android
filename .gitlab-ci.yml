@@ -1,0 +1,37 @@
+image: androidsdk/android-30
+
+stages:
+  - test
+  - build
+  - publish
+
+.tags: &tags
+  tags:
+    - vps-gitlab-runner-docker
+
+testing:
+  stage: test
+  <<: *tags
+  only:
+    - merge_requests
+  script:
+    - ./gradlew clean
+    - ./gradlew testReleaseUnitTest
+
+building:
+  stage: build
+  <<: *tags
+  only:
+    - merge_requests
+  script:
+    - ./gradlew assembleRelease
+
+publishing:
+  stage: publish
+  <<: *tags
+  rules:
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
+      when: manual
+  script:
+    - ./gradlew clean
+    - ./gradlew publish

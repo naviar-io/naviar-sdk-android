@@ -1,0 +1,92 @@
+apply plugin: "maven-publish"
+apply plugin: "signing"
+
+tasks.register("sourceJar", Jar) {
+    from android.sourceSets.main.java.srcDirs
+    archiveClassifier.set("sources")
+}
+
+afterEvaluate {
+    loadVariables()
+
+    signing {
+        def keyId = System.getenv("GPG_KEYID") ?: GPG_KEYID
+        def password = System.getenv("GPG_PASSWORD") ?: GPG_PASSWORD
+        def secretKey = System.getenv("GPG_SECRET_KEY") ?: GPG_SECRET_KEY
+        useInMemoryPgpKeys(keyId, secretKey, password)
+    }
+    publishing {
+        publications {
+            releaseAar(MavenPublication) {
+                from components.release
+                artifact sourceJar
+
+                pom {
+                    name = "VPS SDK"
+                    description = "This is Visual Positioning System SDK for native Android apps"
+                    url = "https://github.com/naviar-io/vps-sdk-android"
+
+                    licenses {
+                        license {
+                            name = "MIT License"
+                            url = "https://github.com/naviar-io/vps-sdk-android/blob/main/LICENSE"
+                        }
+                    }
+
+                    developers {
+                        developer {
+                            name = "Naviar.io"
+                            email = "info@naviar.io"
+                        }
+                    }
+
+                    scm {
+                        url = "https://github.com/naviar-io/vps-sdk-android.git"
+                    }
+                }
+            }
+        }
+
+        repositories {
+            maven {
+                name = "sonatypeStaging"
+                url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+                credentials {
+                    username = System.getenv("OSSRH_USERNAME") ?: OSSRH_USERNAME
+                    password = System.getenv("OSSRH_PASSWORD") ?: OSSRH_PASSWORD
+                }
+            }
+        }
+    }
+
+    signing {
+        sign(publishing.publications)
+    }
+}
+
+private loadVariables() {
+    def localProperties = getLocalProperties()
+
+    project.ext["GPG_KEYID"] = localProperties.getProperty("GPG_KEYID")
+    project.ext["GPG_PASSWORD"] = localProperties.getProperty("GPG_PASSWORD")
+    project.ext["GPG_SECRET_KEY"] = getSecretKey()
+    project.ext["OSSRH_USERNAME"] = localProperties.getProperty("OSSRH_USERNAME")
+    project.ext["OSSRH_PASSWORD"] = localProperties.getProperty("OSSRH_PASSWORD")
+}
+
+private Properties getLocalProperties() {
+    def properties = new Properties()
+    def localProperties = getRootProject().file("local.properties")
+    if (localProperties.exists()) {
+        properties.load(new FileReader(localProperties))
+    }
+    return properties
+}
+
+private String getSecretKey() {
+    def secretKey = getRootProject().file("secret.key")
+    if (secretKey.exists()) {
+        return new String(secretKey.readBytes())
+    }
+    return ""
+}

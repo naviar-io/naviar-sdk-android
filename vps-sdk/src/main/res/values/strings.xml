@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="warning">Warning</string>
+    <string name="camera_permission_warning">Camera permission needed for core functionality. Open app settings?</string>
+    <string name="location_permission_warning">Location permission needed for core functionality. Open app settings?</string>
+    <string name="location_enable">GPS is disable. Open Location settings?</string>
+</resources>
